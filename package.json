@@ -5,6 +5,11 @@
   "author": "Alexis Munsayac <alexis.munsayac@gmail.com>",
   "license": "MIT",
   "private": false,
+  "files": [
+    "dist",
+    "src"
+  ],
+  "module": "./dist/index.esm.js",
   "scripts": {
     "build": "node build-src",
     "check": "tsc --noEmit"
