@@ -1,5 +1,5 @@
 module.exports = {
   entry: './src/index.ts',
-  platform: 'browser',
+  platform: 'node',
   tsconfig: './tsconfig.json',
 };
