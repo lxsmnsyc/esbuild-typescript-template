@@ -1,4 +1,4 @@
 module.exports = {
-  entry: './src/index.ts',
+  entry: 'index.ts',
   tsconfig: './tsconfig.json',
 };
