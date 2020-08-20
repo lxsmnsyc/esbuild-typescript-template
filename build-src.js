@@ -1,13 +1,25 @@
 const { build } = require('esbuild');
+const fs = require('fs-extra');
 const config = require('./esbuild.config');
+const pkg = require('./package.json');
+
+function getPackageName(name) {
+  return name
+    .toLowerCase()
+    .replace(/(^@.*\/)|((^[^a-zA-Z]+)|[^\w.-])|([^a-zA-Z0-9]+$)/g, '');
+}
+
+const baseDir = `./dist`;
+const baseName = getPackageName(pkg.name);
+const baseOut = `${baseDir}/${baseName}`;
 
 // DEV build
 console.time('Development Build');
 build({
   entryPoints: [
-    './src/index.ts',
+    config.entry,
   ],
-  outfile: './dist/index.development.js',
+  outfile: `${baseOut}.development.js`,
   bundle: true,
   // Never minify dev builds
   minify: false,
@@ -35,9 +47,9 @@ build({
 console.time('Production Build');
 build({
   entryPoints: [
-    './src/index.ts',
+    config.entry,
   ],
-  outfile: './dist/index.production.min.js',
+  outfile: `${baseOut}.production.min.js`,
   bundle: true,
   minify: true,
   sourcemap: true,
@@ -63,17 +75,13 @@ build({
 console.time('ESM Build');
 build({
   entryPoints: [
-    './src/index.ts',
+    config.entry,
   ],
-  outdir: './dist',
-  outExtension: {
-    '.js': '.esm.js',
-  },
+  outfile: `${baseOut}.esm.js`,
   bundle: true,
   minify: false,
   format: 'esm',
   sourcemap: false,
-  splitting: true,
   // define environment variables
   define: config.define,
   // 
@@ -89,3 +97,15 @@ build({
     process.exit(1);
   },
 );
+
+const baseLine = `module.exports = require('./${baseName}`;
+const contents = `
+'use strict'
+if (process.env.NODE_ENV === 'production') {
+  ${baseLine}.production.min.js')
+} else {
+  ${baseLine}.development.js')
+}
+`;
+
+fs.outputFile('./dist/index.js', contents);
