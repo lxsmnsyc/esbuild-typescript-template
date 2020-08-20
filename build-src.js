@@ -69,12 +69,12 @@ async function buildAll() {
       minify: false,
       // Generate source maps for dev builds
       sourcemap: true,
+      // 
+      platform: 'node',
       // define environment variables
       define: config.define,
       // 
       target: config.target,
-      // 
-      platform: config.platform,
       //
       tsconfig: config.tsconfig,
       //
@@ -95,12 +95,12 @@ async function buildAll() {
       bundle: true,
       minify: true,
       sourcemap: true,
+      // 
+      platform: 'node',
       // define environment variables
       define: config.define,
       // 
       target: config.target,
-      // 
-      platform: config.platform,
       //
       tsconfig: config.tsconfig,
       //
