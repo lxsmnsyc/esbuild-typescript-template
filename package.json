@@ -12,7 +12,7 @@
   "module": "./dist/index.esm.js",
   "typings": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc --outDir dist --emitDeclarationOnly && node build-src",
+    "build": "node build-src && tsc --outDir dist --emitDeclarationOnly",
     "check": "tsc --noEmit"
   },
   "devDependencies": {
