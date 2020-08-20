@@ -9,7 +9,7 @@
     "src"
   ],
   "main": "dist/index.js",
-  "module": "./dist/index.esm.js",
+  "module": "dist/esbuild-typescript-template.esm.js",
   "typings": "dist/index.d.ts",
   "scripts": {
     "build": "node build-src",
