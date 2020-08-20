@@ -12,9 +12,11 @@ function getPackageName(name) {
     .replace(/(^@.*\/)|((^[^a-zA-Z]+)|[^\w.-])|([^a-zA-Z0-9]+$)/g, '');
 }
 
-const baseDir = `./dist`;
+const baseDir = 'dist';
+const srcDir = 'src';
 const baseName = getPackageName(pkg.name);
-const baseOut = `${baseDir}/${baseName}`;
+const baseOut = `./${baseDir}/${baseName}`;
+const entryPoint = `./${srcDir}/${config.entry}`;
 
 function getBenchmark(label, baseTime) {
   const measure = (performance.now() - baseTime).toFixed(2);
@@ -24,7 +26,7 @@ function getBenchmark(label, baseTime) {
 function compileDeclarations() {
   // Create a Program with an in-memory emit
   const host = ts.createCompilerHost({
-    outDir: 'dist',
+    outDir: baseDir,
     declaration: true,
     emitDeclarationOnly: true,
   });
@@ -35,9 +37,9 @@ function compileDeclarations() {
   
   // Prepare and emit the d.ts files
   const program = ts.createProgram(
-    [config.entry],
+    [entryPoint],
     {
-      outDir: 'dist',
+      outDir: baseDir,
       declaration: true,
       emitDeclarationOnly: true,
     },
@@ -47,7 +49,7 @@ function compileDeclarations() {
 }
 
 async function buildAll() {
-  await fs.remove('./dist');
+  await fs.remove(`./${baseDir}`);
   
   const totalTime = performance.now();
 
@@ -61,7 +63,7 @@ async function buildAll() {
     // DEV build
     build({
       entryPoints: [
-        config.entry,
+        entryPoint,
       ],
       outfile: `${baseOut}.development.js`,
       bundle: true,
@@ -89,7 +91,7 @@ async function buildAll() {
     // PROD build
     build({
       entryPoints: [
-        config.entry,
+        entryPoint,
       ],
       outfile: `${baseOut}.production.min.js`,
       bundle: true,
@@ -115,7 +117,7 @@ async function buildAll() {
     // ESM build
     build({
       entryPoints: [
-        config.entry,
+        entryPoint,
       ],
       outfile: `${baseOut}.esm.js`,
       bundle: true,
@@ -149,12 +151,12 @@ async function buildAll() {
   }
   `;
 
-  await fs.outputFile('./dist/index.js', contents);
+  await fs.outputFile(`./${baseDir}/index.js`, contents);
   getBenchmark('Total Build', totalTime);
 }
 
 if (process.argv.includes('--watch') || process.argv.includes('-w')) {
-  chokidar.watch('./src').on('all', () => {
+  chokidar.watch(`./${srcDir}`).on('all', () => {
     buildAll().catch(
       (err) => {
         console.error(err);
