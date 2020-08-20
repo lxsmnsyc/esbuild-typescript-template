@@ -1,9 +1,10 @@
 const { build } = require('esbuild');
 const fs = require('fs-extra');
+const { performance } = require('perf_hooks');
+const chokidar = require('chokidar');
+const ts = require('typescript');
 const config = require('./esbuild.config');
 const pkg = require('./package.json');
-
-console.time('ESBuild');
 
 function getPackageName(name) {
   return name
@@ -15,12 +16,47 @@ const baseDir = `./dist`;
 const baseName = getPackageName(pkg.name);
 const baseOut = `${baseDir}/${baseName}`;
 
+function getBenchmark(label, baseTime) {
+  const measure = (performance.now() - baseTime).toFixed(2);
+  console.log(`${label}: ${measure}ms`);
+}
+
+function compileDeclarations() {
+  // Create a Program with an in-memory emit
+  const host = ts.createCompilerHost({
+    outDir: 'dist',
+    declaration: true,
+    emitDeclarationOnly: true,
+  });
+
+  host.writeFile = (fileName, data) => {
+    fs.outputFileSync(`./${fileName}`, data);
+  };
+  
+  // Prepare and emit the d.ts files
+  const program = ts.createProgram(
+    [config.entry],
+    {
+      outDir: 'dist',
+      declaration: true,
+      emitDeclarationOnly: true,
+    },
+    host,
+  );
+  program.emit();
+}
+
 async function buildAll() {
   await fs.remove('./dist');
+  
+  const totalTime = performance.now();
 
-  console.time('Development Build');
-  console.time('Production Build');
-  console.time('ESM Build');
+  const compileTime = performance.now();
+  compileDeclarations();
+  getBenchmark('Type declarations', compileTime);
+
+  const baseTime = performance.now();
+
   await Promise.all([
     // DEV build
     build({
@@ -41,8 +77,14 @@ async function buildAll() {
       platform: config.platform,
       //
       tsconfig: config.tsconfig,
+      //
+      jsxFactory: config.jsxFactory,
+      //
+      jsxFragment: config.jsxFragment,
     }).then(
-      () => console.timeEnd('Development Build'),
+      () => {
+        getBenchmark('Development Build', baseTime);
+      },
     ),
     // PROD build
     build({
@@ -61,9 +103,13 @@ async function buildAll() {
       platform: config.platform,
       //
       tsconfig: config.tsconfig,
+      //
+      jsxFactory: config.jsxFactory,
+      //
+      jsxFragment: config.jsxFragment,
     }).then(
       () => {
-        console.timeEnd('Production Build');
+        getBenchmark('Production Build', baseTime);
       },
     ),
     // ESM build
@@ -82,9 +128,13 @@ async function buildAll() {
       target: config.target,
       //
       tsconfig: config.tsconfig,
+      //
+      jsxFactory: config.jsxFactory,
+      //
+      jsxFragment: config.jsxFragment,
     }).then(
       () => {
-        console.timeEnd('ESM Build');
+        getBenchmark('ESM Build', baseTime);
       },
     ),
   ]);
@@ -100,12 +150,23 @@ async function buildAll() {
   `;
 
   await fs.outputFile('./dist/index.js', contents);
-  console.timeEnd('ESBuild');
+  getBenchmark('Total Build', totalTime);
 }
 
-buildAll().catch(
-  (err) => {
-    console.error(err);
-    process.exit(1);
-  },
-);
+if (process.argv.includes('--watch') || process.argv.includes('-w')) {
+  chokidar.watch('./src').on('all', () => {
+    buildAll().catch(
+      (err) => {
+        console.error(err);
+        process.exit(1);
+      },
+    );
+  });  
+} else {
+  buildAll().catch(
+    (err) => {
+      console.error(err);
+      process.exit(1);
+    },
+  );
+}
